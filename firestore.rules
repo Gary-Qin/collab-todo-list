@@ -5,12 +5,5 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if true;
     }
-
-    match /things/{docId} {
-      // get -> single document read requests
-      // update -> writes to existing documents
-      // delete -> delete operations
-      allow get, update, delete: if request.auth != null;
-    }
   }
 }

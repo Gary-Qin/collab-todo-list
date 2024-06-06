@@ -1,29 +1,154 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 
-let database;
+const listsDiv = document.querySelector("#lists");
 let unsubscribe;
 let currentUser;
+let db;
 
-const itemList = document.querySelector("#itemList");
-const addItemButton = document.querySelector("#addItemBtn");
-const inputForm = document.querySelector("#inputForm");
+async function findUsersLists() {
+    const usersSnap = await getDoc(doc(db, "users", currentUser.uid));
 
-function toggleAddItem() {
-    inputForm.hasChildNodes() ? inputForm.replaceChildren() : createForm();
+    if(usersSnap.exists()) {
+        const listArray = usersSnap.data().accessibleLists
+        return listArray;
+    }
+    return initializeUser();
 }
 
-function createForm() {
-    const nameLabel = document.createElement("label");
-    const nameInput = document.createElement("input");
+async function initializeUser() {
+    const listsRef = await addDoc(collection(db, "lists"), {
+        title: `${currentUser.displayName}'s List`,
+        description: serverTimestamp(),
+        roles: {
+            [currentUser.uid]: "owner"
+        }           
+    });
+
+    const itemsRef = await addDoc(collection(db, "lists", listsRef.id, "items"), {
+        user: "Bot",
+        item: "Add to the to-do list!",
+        priority: 1,
+        accomplished: false,
+        timestamp: serverTimestamp()
+    })
+
+    const usersRef = await setDoc(doc(db, "users", currentUser.uid), {
+        email: currentUser.email,
+        accessibleLists: [listsRef.id]
+    });
+
+    const listArray = [listsRef.id]
+    return listArray;
+}
+
+async function writeToDoc(listId, item, priority) {
+    const docRef = await addDoc(collection(db, "lists", listId, "items"), {
+        user: currentUser.displayName,
+        item: item,
+        priority: priority,
+        accomplished: false,
+        timestamp: serverTimestamp()
+    });
+    console.log("Document written with ID: ", docRef.id);
+}
+
+function displayListInRealTime(listId) {
+    const itemList = document.querySelector(`.${listId}`);
+    const q = query(collection(db, "lists", listId, "items"), orderBy("timestamp", "asc"));
+
+    unsubscribe = onSnapshot(q, (querySnapshot) => {
+        itemList.replaceChildren();
+        querySnapshot.forEach((item) => {
+            const itemInDB = doc(db, "lists", listId, "items", item.id);
+
+            const listItem = document.createElement("li");
+            const checkBox = document.createElement("input");
+            const itemText = document.createElement("span");
+            const deleteButton = document.createElement("button");
+
+            checkBox.type = "checkbox";
+            checkBox.checked = item.data().accomplished;
+            checkBox.addEventListener("change", async () => {
+                await updateDoc(itemInDB, { accomplished: checkBox.checked })
+                console.log("clicked");
+            });
+            itemText.textContent = `${item.data().item}, ${item.data().priority}, by ${item.data().user}`;
+            deleteButton.textContent = "Delete item";
+            deleteButton.addEventListener("click", async () => await deleteDoc(itemInDB));
+
+            listItem.appendChild(checkBox);
+            listItem.appendChild(itemText);
+            itemList.appendChild(listItem);
+            itemList.appendChild(deleteButton);
+        });
+    });
+}
+
+async function fetchAndDisplayContent() {
+    // findUsersLists returns a Promise for an array of list ids that should be accessible to the user
+    const usersLists = await findUsersLists(currentUser, db);
+    usersLists.forEach(async (listId) => {
+        await createListElements(listId);
+        displayListInRealTime(listId);
+    });
+}
+
+export function setupFirestore(database, auth) {
+    db = database;
+    onAuthStateChanged(auth, user => {
+        if(user) {
+            currentUser = user;
+            listsDiv.replaceChildren();
+            fetchAndDisplayContent();
+        }
+        else {
+            unsubscribe && unsubscribe();
+        }
+    });
+}
+
+
+
+
+
+/* ===== PURE UI FUNCTIONS ===== */
+
+async function createListElements(listId) {
+    const listContainer = document.createElement("div");
+    const listTitle = document.createElement("h3");
+    const actualList = document.createElement("ul");
+    const addItemButton = document.createElement("button");
+    const addItemForm = document.createElement("form");
+    const docSnap = await getDoc(doc(db, "lists", listId));
+
+    listTitle.textContent = docSnap.data().title;
+    addItemButton.textContent = "Add item";
+    addItemButton.addEventListener("click", () => toggleAddItem(listId, addItemForm));
+    actualList.className = listId;
+    
+    listContainer.appendChild(listTitle);
+    listContainer.appendChild(actualList);
+    listContainer.appendChild(addItemButton);
+    listContainer.appendChild(addItemForm);
+    listsDiv.append(listContainer);
+}
+
+function toggleAddItem(listId, form) {
+    form.hasChildNodes() ? form.replaceChildren() : createForm(listId, form);
+}
+
+function createForm(listId, form) {
+    const itemLabel = document.createElement("label");
+    const itemInput = document.createElement("input");
     const priorityLabel = document.createElement("label");
     const priorityInput = document.createElement("input");
     const confirmButton = document.createElement("button");
     
-    nameLabel.textContent = "List item: ";
-    nameInput.type = "text";
-    nameInput.id = "name";
-    nameInput.setAttribute("required", "");
+    itemLabel.textContent = "List item: ";
+    itemInput.type = "text";
+    itemInput.id = "item";
+    itemInput.setAttribute("required", "");
 
     priorityLabel.textContent = "Priority:  ";
     priorityInput.type = "number";
@@ -34,64 +159,14 @@ function createForm() {
     confirmButton.type = "submit";
     confirmButton.addEventListener("click", (e) => {
         e.preventDefault();
-        writeToDoc(nameInput.value, priorityInput.value);
-        nameInput.value = ``;
+        writeToDoc(listId, itemInput.value, priorityInput.value);
+        itemInput.value = ``;
         priorityInput.value = ``;
     })
 
-    inputForm.appendChild(nameLabel)
-    inputForm.appendChild(nameInput);
-    inputForm.appendChild(priorityLabel)
-    inputForm.appendChild(priorityInput);
-    inputForm.appendChild(confirmButton);
-}
-
-async function writeToDoc(name, priority) {
-    const docRef = await addDoc(collection(database, "things"), {
-        user: currentUser,
-        name: name,
-        priority: priority,
-        timestamp: serverTimestamp()
-    });
-    console.log("Document written with ID: ", docRef.id);
-}
-
-function displayDB() {
-    const q = query(collection(database, "things"), orderBy("timestamp", "asc"))
-    unsubscribe = onSnapshot(q, querySnapshot => {
-        itemList.replaceChildren();
-        querySnapshot.forEach((item) => {
-
-            const listItem = document.createElement("li");
-            const deleteButton = document.createElement("button");
-            listItem.textContent = `By ${item.data().user}: ${item.data().name}, Priority: ${item.data().priority}`;
-            deleteButton.textContent = "Delete item";
-            deleteButton.addEventListener("click", async () => await deleteDoc(doc(database, "things", item.id)))
-
-            itemList.appendChild(listItem);
-            itemList.appendChild(deleteButton);
-        })
-    })
-}
-
-export function setupFirestore(db, auth) {
-    onAuthStateChanged(auth, user => {
-        if(user) {
-            try {
-                database = db;
-                currentUser = user.displayName;
-                console.log(currentUser);
-                addItemBtn.addEventListener("click", () => {
-                    console.log("clicked");
-                    toggleAddItem()
-                });
-                displayDB();
-            } catch (e) {
-                console.error("Error adding document: ", e);
-            }
-        }
-        else {
-            unsubscribe && unsubscribe();
-        }
-    })
+    form.appendChild(itemLabel)
+    form.appendChild(itemInput);
+    form.appendChild(priorityLabel)
+    form.appendChild(priorityInput);
+    form.appendChild(confirmButton);
 }

@@ -4,7 +4,6 @@ import { getFirestore } from "firebase/firestore";
 
 import { setupAuth } from "./auth.js";
 import { setupFirestore } from "./firestore.js";
-import { setupFirestoreV2 } from "./firestore-v2.js";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -23,6 +22,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 setupAuth(auth);
-setupFirestoreV2(db, auth);
-// setupFirestore(db, auth);
+setupFirestore(db, auth);
+
 
