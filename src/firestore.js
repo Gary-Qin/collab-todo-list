@@ -1,8 +1,9 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
 
-let thingsRef;
 let database;
+let unsubscribe;
+let currentUser;
 
 const itemList = document.querySelector("#itemList");
 const addItemButton = document.querySelector("#addItemBtn");
@@ -33,7 +34,7 @@ function createForm() {
     confirmButton.type = "submit";
     confirmButton.addEventListener("click", (e) => {
         e.preventDefault();
-        writeToDB(nameInput.value, priorityInput.value);
+        writeToDoc(nameInput.value, priorityInput.value);
         nameInput.value = ``;
         priorityInput.value = ``;
     })
@@ -45,8 +46,9 @@ function createForm() {
     inputForm.appendChild(confirmButton);
 }
 
-async function writeToDB(name, priority) {
+async function writeToDoc(name, priority) {
     const docRef = await addDoc(collection(database, "things"), {
+        user: currentUser,
         name: name,
         priority: priority,
         timestamp: serverTimestamp()
@@ -56,13 +58,13 @@ async function writeToDB(name, priority) {
 
 function displayDB() {
     const q = query(collection(database, "things"), orderBy("timestamp", "asc"))
-    onSnapshot(q, querySnapshot => {
+    unsubscribe = onSnapshot(q, querySnapshot => {
         itemList.replaceChildren();
         querySnapshot.forEach((item) => {
 
             const listItem = document.createElement("li");
             const deleteButton = document.createElement("button");
-            listItem.textContent = `${item.data().name}, Priority: ${item.data().priority}`;
+            listItem.textContent = `By ${item.data().user}: ${item.data().name}, Priority: ${item.data().priority}`;
             deleteButton.textContent = "Delete item";
             deleteButton.addEventListener("click", async () => await deleteDoc(doc(database, "things", item.id)))
 
@@ -77,11 +79,19 @@ export function setupFirestore(db, auth) {
         if(user) {
             try {
                 database = db;
-                addItemBtn.addEventListener("click", () => toggleAddItem());
+                currentUser = user.displayName;
+                console.log(currentUser);
+                addItemBtn.addEventListener("click", () => {
+                    console.log("clicked");
+                    toggleAddItem()
+                });
                 displayDB();
             } catch (e) {
                 console.error("Error adding document: ", e);
             }
+        }
+        else {
+            unsubscribe && unsubscribe();
         }
     })
 }
