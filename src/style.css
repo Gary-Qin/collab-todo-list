@@ -30,7 +30,7 @@ h3 {
     width: 33%;
 }
 
-.listForm {
+.itemForm, #listForm {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
