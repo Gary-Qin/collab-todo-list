@@ -1,5 +1,6 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import "./style.css";
 
 const listsDiv = document.querySelector("#lists");
 let unsubscribe;
@@ -71,7 +72,6 @@ function displayListInRealTime(listId) {
             checkBox.checked = item.data().accomplished;
             checkBox.addEventListener("change", async () => {
                 await updateDoc(itemInDB, { accomplished: checkBox.checked })
-                console.log("clicked");
             });
             itemText.textContent = `${item.data().item}, ${item.data().priority}, by ${item.data().user}`;
             deleteButton.textContent = "Delete item";
@@ -88,6 +88,9 @@ function displayListInRealTime(listId) {
 async function fetchAndDisplayContent() {
     // findUsersLists returns a Promise for an array of list ids that should be accessible to the user
     const usersLists = await findUsersLists(currentUser, db);
+    listsDiv.replaceChildren();
+
+    displayListId(usersLists[0]);
     usersLists.forEach(async (listId) => {
         await createListElements(listId);
         displayListInRealTime(listId);
@@ -99,7 +102,6 @@ export function setupFirestore(database, auth) {
     onAuthStateChanged(auth, user => {
         if(user) {
             currentUser = user;
-            listsDiv.replaceChildren();
             fetchAndDisplayContent();
         }
         else {
@@ -122,16 +124,17 @@ async function createListElements(listId) {
     const addItemForm = document.createElement("form");
     const docSnap = await getDoc(doc(db, "lists", listId));
 
-    listTitle.textContent = docSnap.data().title;
+    listTitle.textContent = docSnap.data().roles[currentUser.uid] === "owner" ? "Your List" : docSnap.data().title;
     addItemButton.textContent = "Add item";
     addItemButton.addEventListener("click", () => toggleAddItem(listId, addItemForm));
     actualList.className = listId;
+    addItemForm.className = "listForm";
     
     listContainer.appendChild(listTitle);
     listContainer.appendChild(actualList);
     listContainer.appendChild(addItemButton);
     listContainer.appendChild(addItemForm);
-    listsDiv.append(listContainer);
+    listsDiv.appendChild(listContainer);
 }
 
 function toggleAddItem(listId, form) {
@@ -169,4 +172,20 @@ function createForm(listId, form) {
     form.appendChild(priorityLabel)
     form.appendChild(priorityInput);
     form.appendChild(confirmButton);
+}
+
+function displayListId(listId) {
+    const displayIdElement = document.querySelector("#listId");
+    const idText = document.createElement("span");
+    const toggleIdButton = document.createElement("button");
+
+    toggleIdButton.addEventListener("click", () => {
+        idText.textContent = idText.textContent === "Your list ID: " ? `Your list ID: ${listId}` : "Your list ID: ";
+    });
+        
+    idText.textContent = "Your list ID: ";
+    toggleIdButton.textContent = "Toggle ID";
+    
+    displayIdElement.appendChild(idText);
+    displayIdElement.appendChild(toggleIdButton);
 }

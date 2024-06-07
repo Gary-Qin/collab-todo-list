@@ -1,0 +1,39 @@
+html {
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+#userDetails {
+    margin-bottom: 0;
+}
+
+#listId {
+    margin-top: 5px;
+}
+
+h3 {
+    margin: 5px 0 5px 0;
+}
+
+#lists {
+    border-style: solid;
+    border-color: black;
+    display: flex;
+}
+
+#lists > div {
+    border-style: dotted;
+    border-color: red;
+    width: 33%;
+}
+
+.listForm {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+

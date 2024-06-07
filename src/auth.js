@@ -35,7 +35,6 @@ export function setupAuth(auth) {
         if(user) {
             whenSignedIn.hidden = false;
             whenSignedOut.hidden = true;
-            console.log(user);
             userDetails.textContent = `Hello ${user.displayName}!`;
         } else {
             whenSignedIn.hidden = true;

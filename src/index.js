@@ -1,11 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-
 import { setupAuth } from "./auth.js";
 import { setupFirestore } from "./firestore.js";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyB37to1BKw213Rau-8PVschGmERthH5M9c",
