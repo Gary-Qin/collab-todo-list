@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import "./style.css";
 
 const listsDiv = document.querySelector("#lists");
@@ -218,13 +218,23 @@ function displayListId(listId) {
 }
 
 function activateAddListButton() {
-    const addListButton = document.querySelector("#addListButton");
-    addListButton.addEventListener("click", () => toggleAddList())
+    const container = document.querySelector("#addButtonContainer");
+    const addListButton = document.createElement("button");
+
+    container.replaceChildren();
+
+    addListButton.textContent = "Add List";
+    addListButton.addEventListener("click", () => toggleAddList());
+
+    container.appendChild(addListButton);
 }
 
 function toggleAddList() {
-    // TO-DO: do not show list form if 3 lists already exist
-    addListForm.hasChildNodes() ? addListForm.replaceChildren() : createListForm();
+    addListForm.hasChildNodes() ? addListForm.replaceChildren() : checkIfMaxLists();
+}
+
+function checkIfMaxLists() {
+    listsDiv.childNodes.length === 3 ? alert("only 3 lists are allowed!"): createListForm();
 }
 
 function createListForm() {
@@ -241,10 +251,11 @@ function createListForm() {
     confirmButton.type = "submit";
     confirmButton.addEventListener("click", async (e) => {
         e.preventDefault();
+        checkListId(listInput.value);
         // TO-DO: verify if list ID is valid/already exists
-        giveUserAccessToList(listInput.value)
-        await createListElements(listInput.value);
-        displayListInRealTime(listInput.value);
+        // giveUserAccessToList(listInput.value)
+        // await createListElements(listInput.value);
+        // displayListInRealTime(listInput.value);
         // TO-DO: verify if list ID is valid/already exists
         toggleAddList();
     })
@@ -252,4 +263,30 @@ function createListForm() {
     addListForm.appendChild(listLabel)
     addListForm.appendChild(listInput);
     addListForm.appendChild(confirmButton);
+}
+
+async function checkListId(listId) {
+    let listExists = false;
+
+    const listsSnapshot = await getDocs(collection(db, "lists"));
+    listsSnapshot.forEach((list) => {
+        if(list.id === listId) {
+            listExists = true;
+        }
+    })
+
+    if(listExists === false) {
+        alert("list doesn't exist!");
+    }
+    else {
+        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+        if(userSnap.data().accessibleLists.includes(listId)) {
+            alert("list is already on your account!")
+        }
+        else {
+            giveUserAccessToList(listId)
+            await createListElements(listId);
+            displayListInRealTime(listId);
+        }
+    }
 }
