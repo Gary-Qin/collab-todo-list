@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import "./style.css";
 
 const listsDiv = document.querySelector("#lists");
@@ -67,6 +67,42 @@ async function writeUIDtoListRoles(listId, roleType) {
     const userRef = await updateDoc(doc(db, "lists", listId), {
         [`roles.${currentUser.uid}`]: roleType
     });
+}
+
+async function removeListFromUser(listId) {
+    const listRef = await updateDoc(doc(db, "lists", listId), {
+        [`roles.${currentUser.uid}`]: "removed"
+    })
+
+    const userRef = await updateDoc(doc(db, "users", currentUser.uid), {
+        accessibleLists: arrayRemove(listId)
+    });
+}
+
+async function checkListId(listId) {
+    let listExists = false;
+
+    const listsSnapshot = await getDocs(collection(db, "lists"));
+    listsSnapshot.forEach((list) => {
+        if(list.id === listId) {
+            listExists = true;
+        }
+    })
+
+    if(listExists === false) {
+        alert("list doesn't exist!");
+    }
+    else {
+        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+        if(userSnap.data().accessibleLists.includes(listId)) {
+            alert("list is already on your account!")
+        }
+        else {
+            giveUserAccessToList(listId)
+            await createListElements(listId);
+            displayListInRealTime(listId);
+        }
+    }
 }
 
 function giveUserAccessToList(listId) {
@@ -137,22 +173,35 @@ function displayListInRealTime(listId) {
 
 async function createListElements(listId) {
     const listContainer = document.createElement("div");
+
+    const listTop = document.createElement("div");
     const listTitle = document.createElement("h3");
+    const listClose = document.createElement("button");
+
     const actualList = document.createElement("ul");
     const addItemButton = document.createElement("button");
     const addItemForm = document.createElement("form");
     const docSnap = await getDoc(doc(db, "lists", listId));
 
     listContainer.className = listId;
+    listTop.className = "topBar";
     actualList.className = listId;
     addItemForm.className = "itemForm";
 
     listTitle.textContent = docSnap.data().roles[currentUser.uid] === "owner" ? "Your List" : docSnap.data().title;
+    listClose.textContent = "Remove list";
     addItemButton.textContent = "Add item";
     addItemButton.addEventListener("click", () => toggleAddItem(listId, addItemForm));
+    listClose.addEventListener("click", (e) => {
+        listsDiv.removeChild(e.target.parentNode.parentNode);
+        removeListFromUser(listId);
+    });
     
-    
-    listContainer.appendChild(listTitle);
+    listTop.appendChild(listTitle);
+    if(docSnap.data().roles[currentUser.uid] !== "owner") {
+        listTop.appendChild(listClose);
+    }
+    listContainer.appendChild(listTop);
     listContainer.appendChild(actualList);
     listContainer.appendChild(addItemButton);
     listContainer.appendChild(addItemForm);
@@ -252,41 +301,10 @@ function createListForm() {
     confirmButton.addEventListener("click", async (e) => {
         e.preventDefault();
         checkListId(listInput.value);
-        // TO-DO: verify if list ID is valid/already exists
-        // giveUserAccessToList(listInput.value)
-        // await createListElements(listInput.value);
-        // displayListInRealTime(listInput.value);
-        // TO-DO: verify if list ID is valid/already exists
         toggleAddList();
     })
 
     addListForm.appendChild(listLabel)
     addListForm.appendChild(listInput);
     addListForm.appendChild(confirmButton);
-}
-
-async function checkListId(listId) {
-    let listExists = false;
-
-    const listsSnapshot = await getDocs(collection(db, "lists"));
-    listsSnapshot.forEach((list) => {
-        if(list.id === listId) {
-            listExists = true;
-        }
-    })
-
-    if(listExists === false) {
-        alert("list doesn't exist!");
-    }
-    else {
-        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-        if(userSnap.data().accessibleLists.includes(listId)) {
-            alert("list is already on your account!")
-        }
-        else {
-            giveUserAccessToList(listId)
-            await createListElements(listId);
-            displayListInRealTime(listId);
-        }
-    }
 }

@@ -22,13 +22,18 @@ h3 {
     border-style: solid;
     border-color: black;
     display: flex;
-    justify-content: space-between;
+    /* justify-content: space-between; */
 }
 
 #lists > div {
     border-style: dotted;
     border-color: red;
-    width: 33%;
+    width: 33.33%;
+}
+
+.topBar {
+    display: flex;
+    justify-content: space-between;
 }
 
 .itemForm, #listForm {
