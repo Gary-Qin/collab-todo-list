@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import "./style.css";
 
 const listsDiv = document.querySelector("#lists");
@@ -54,7 +54,6 @@ async function writeToItems(listId, item, priority) {
         accomplished: false,
         timestamp: serverTimestamp()
     });
-    console.log("Document written with ID: ", itemRef.id);
 }
 
 async function writeListIdToCurrentUser(listId) {
@@ -213,6 +212,8 @@ function toggleAddItem(listId, form) {
 }
 
 function createItemForm(listId, form) {
+    const items = collection(db, "lists", listId, "items");
+
     const itemLabel = document.createElement("label");
     const itemInput = document.createElement("input");
     const priorityLabel = document.createElement("label");
@@ -231,11 +232,18 @@ function createItemForm(listId, form) {
 
     confirmButton.textContent = "Confirm";
     confirmButton.type = "submit";
-    confirmButton.addEventListener("click", (e) => {
+    confirmButton.addEventListener("click", async (e) => {
         e.preventDefault();
-        writeToItems(listId, itemInput.value, priorityInput.value);
-        itemInput.value = ``;
-        priorityInput.value = ``;
+        
+        const itemCount = await getCountFromServer(items);
+        if(itemCount.data().count === 20) {
+            alert("can't have more than 20 items in a list")
+        }
+        else {
+            writeToItems(listId, itemInput.value, priorityInput.value);
+            itemInput.value = ``;
+            priorityInput.value = ``;
+        }        
     })
 
     form.appendChild(itemLabel)
