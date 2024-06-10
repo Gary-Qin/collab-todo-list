@@ -1,4 +1,4 @@
-import { getAuth, signOut, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
+import { signOut, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 
 const whenSignedIn = document.querySelector('#signedIn');
 const whenSignedOut = document.querySelector('#signedOut');

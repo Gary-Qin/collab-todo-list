@@ -1,8 +1,11 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+
 import { setupAuth } from "./auth.js";
 import { setupFirestore } from "./firestore.js";
+import "./style.css";
+
 
 
 const firebaseConfig = {
