@@ -1,9 +1,9 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
-import { displayListId } from "./showListId.js";
-import { activateAddListButton } from "./addList.js";
-import { displayList } from "./showList.js";
+import { displayListId } from "./ui/showListId.js";
+import { activateAddListButton } from "./ui/addList.js";
+import { displayList } from "./ui/showList.js";
 
 const listsDiv = document.querySelector("#lists");
 let db;

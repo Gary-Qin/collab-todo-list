@@ -4,7 +4,7 @@ import { getFirestore } from "firebase/firestore";
 
 import { setupAuth } from "./auth.js";
 import { setupFirestore } from "./firestore.js";
-import "./style.css";
+import "./css/style.css";
 
 
 
