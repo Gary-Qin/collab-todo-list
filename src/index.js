@@ -24,5 +24,3 @@ const db = getFirestore(app);
 
 setupAuth(auth);
 setupFirestore(db, auth);
-
-

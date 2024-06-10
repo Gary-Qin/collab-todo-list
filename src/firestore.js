@@ -39,6 +39,7 @@ async function initializeUserAndList() {
     })
 
     const userRef = await setDoc(doc(db, "users", currentUser.uid), {
+        name: currentUser.displayName,
         email: currentUser.email,
         accessibleLists: [listRef.id]
     });
@@ -48,7 +49,6 @@ async function initializeUserAndList() {
 }
 
 async function fetchAndDisplayContent() {
-    // findUsersLists returns a Promise for an array of list ids that should be accessible to the user
     const usersLists = await findUsersLists();
     listsDiv.replaceChildren();
 

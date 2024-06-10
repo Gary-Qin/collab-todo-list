@@ -36,10 +36,11 @@ export async function displayList(listId, cu, d) {
     currentUser = cu;
     await createListElements(listId);
     displayListInRealTime(listId);
+    displayMembersInRealTime(listId);
 }
 
 function displayListInRealTime(listId) {
-    const itemList = document.querySelector(`ul.${listId}`);
+    const itemList = document.querySelector(`ul.${listId}.items`);
     const q = query(collection(db, "lists", listId, "items"), orderBy("timestamp", "asc"));
 
     onSnapshot(q, (querySnapshot) => {
@@ -69,6 +70,21 @@ function displayListInRealTime(listId) {
     });
 }
 
+function displayMembersInRealTime(listId) {
+    const membersList = document.querySelector(`ul.${listId}.members`);
+
+    onSnapshot(doc(db, "lists", listId), async (list) => {
+        for(const member in list.data().roles) {
+            if(list.data().roles[member] !== "removed") {
+                let userSnap = await getDoc(doc(db, "users", member));
+                let memberLi = document.createElement("li");
+                memberLi.textContent = userSnap.data().name;
+                membersList.appendChild(memberLi);
+            }
+        }
+    })
+}
+
 async function createListElements(listId) {
     const listContainer = document.createElement("div");
 
@@ -79,11 +95,19 @@ async function createListElements(listId) {
     const actualList = document.createElement("ul");
     const addItemButton = document.createElement("button");
     const addItemForm = document.createElement("form");
+
+    const listBottom = document.createElement("div");
+    const membersTitle = document.createElement("h3")
+    const membersList = document.createElement("ul");
+
     const docSnap = await getDoc(doc(db, "lists", listId));
+
+
 
     listContainer.className = listId;
     listTop.className = "topBar";
-    actualList.className = listId;
+    actualList.className += ` ${listId}`;
+    actualList.className += " items"
     addItemForm.className = "itemForm";
 
     listTitle.textContent = docSnap.data().roles[currentUser.uid] === "owner" ? "Your List" : docSnap.data().title;
@@ -94,15 +118,23 @@ async function createListElements(listId) {
         listsDiv.removeChild(e.target.parentNode.parentNode);
         removeUserAccessToList(listId);
     });
+
+    membersTitle.textContent = "Users";
+    membersList.className += ` ${listId}`;
+    membersList.className += " members";
     
     listTop.appendChild(listTitle);
     if(docSnap.data().roles[currentUser.uid] !== "owner") {
         listTop.appendChild(listClose);
     }
+    listBottom.appendChild(membersTitle);
+    listBottom.appendChild(membersList);
+
     listContainer.appendChild(listTop);
     listContainer.appendChild(actualList);
     listContainer.appendChild(addItemButton);
     listContainer.appendChild(addItemForm);
+    listContainer.appendChild(listBottom);
     listsDiv.appendChild(listContainer);
 }
 
