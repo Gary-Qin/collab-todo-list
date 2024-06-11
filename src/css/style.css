@@ -22,6 +22,7 @@ h3 {
     border-style: solid;
     border-color: black;
     display: flex;
+    flex-wrap: wrap;
     /* justify-content: space-between; */
 }
 

@@ -65,7 +65,7 @@ function toggleAddList() {
 }
 
 function checkIfMaxLists() {
-    listsDiv.childNodes.length === 3 ? alert("only 3 lists are allowed!"): createListForm();
+    listsDiv.childNodes.length === 9 ? alert("only 9 lists are allowed!"): createListForm();
 }
 
 function createListForm() {

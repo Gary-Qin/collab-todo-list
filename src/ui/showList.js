@@ -72,6 +72,7 @@ function displayListInRealTime(listId) {
 
 function displayMembersInRealTime(listId) {
     const membersList = document.querySelector(`ul.${listId}.members`);
+    membersList.replaceChildren();
 
     onSnapshot(doc(db, "lists", listId), async (list) => {
         for(const member in list.data().roles) {
@@ -167,8 +168,8 @@ function createItemForm(listId, form) {
         e.preventDefault();
         
         const itemCount = await getCountFromServer(items);
-        if(itemCount.data().count === 20) {
-            alert("can't have more than 20 items in a list")
+        if(itemCount.data().count === 30) {
+            alert("can't have more than 30 items in a list")
         }
         else {
             writeToItems(listId, itemInput.value, priorityInput.value);
