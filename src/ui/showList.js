@@ -55,10 +55,13 @@ function displayListInRealTime(listId) {
 
             checkBox.type = "checkbox";
             checkBox.checked = item.data().accomplished;
-            checkBox.addEventListener("change", async () => {
+
+            checkBox.addEventListener("change", async (e) => {
                 await updateDoc(itemInDB, { accomplished: checkBox.checked })
             });
+
             itemText.textContent = `${item.data().item}, ${item.data().priority}, by ${item.data().user}`;
+            itemText.style.textDecoration = item.data().accomplished ? "line-through" : "none";
             deleteButton.textContent = "Delete item";
             deleteButton.addEventListener("click", async () => await deleteDoc(itemInDB));
 
