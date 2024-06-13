@@ -1,9 +1,8 @@
-import { signOut, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 
 const whenSignedIn = document.querySelector('#signedIn');
 const whenSignedOut = document.querySelector('#signedOut');
 const signInBtn = document.querySelector('#signInBtn');
-const signOutBtn = document.querySelector('#signOutBtn');
 const userDetails = document.querySelector('#userDetails');
 
 export function setupAuth(auth) {
@@ -20,14 +19,6 @@ export function setupAuth(auth) {
             const errorMessage = error.message;
             const email = error.customData.email;
             const credential = GoogleAuthProvider.credentialFromError(error);
-        })
-    );
-
-    signOutBtn.addEventListener("click", () => signOut(auth)
-        .then(() => {
-            // Sign-out successful.
-        }).catch((error) => {
-            // An error happened.
         })
     );
 

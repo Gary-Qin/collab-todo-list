@@ -1,11 +1,10 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getDatabase } from "firebase/database";
 
 import { setupAuth } from "./auth.js";
 import { setupFirestore } from "./firestore.js";
-import { setupRealtime } from "./realtime.js";
+import { setupPresence } from "./presence.js";
 import "./css/style.css";
 
 
@@ -24,8 +23,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const firestore = getFirestore(app);
-const realtime = getDatabase(app);
 
 setupAuth(auth);
 setupFirestore(firestore, auth);
-setupRealtime(realtime, auth);
+setupPresence(firestore, auth);

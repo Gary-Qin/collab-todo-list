@@ -78,15 +78,22 @@ function displayMembersInRealTime(listId) {
     membersList.replaceChildren();
 
     onSnapshot(doc(db, "lists", listId), async (list) => {
+        membersList.replaceChildren();
         for(const member in list.data().roles) {
             if(list.data().roles[member] !== "removed") {
                 let userSnap = await getDoc(doc(db, "users", member));
                 let memberLi = document.createElement("li");
-                memberLi.textContent = userSnap.data().name;
+
+                console.log(userSnap.data().status.state || "hello");
+                onSnapshot(doc(db, "users", member), async (user) => {
+                    memberLi.textContent = `${userSnap.data().name} - ${user.data().status.state}` ;
+                })
+                // memberLi.textContent = `${userSnap.data().name} - ${userSnap.data().status.state || "hello"}` ;
                 membersList.appendChild(memberLi);
             }
         }
     })
+
 }
 
 async function createListElements(listId) {
